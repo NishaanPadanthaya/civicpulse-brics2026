@@ -16,6 +16,9 @@ export const submitFeedback = (data) => api.post('/feedback/submit', data)
 export const submitVoiceFeedback = (formData) => api.post('/feedback/voice', formData, {
   headers: { 'Content-Type': 'multipart/form-data' }
 })
+export const transcribeAudio = (formData) => api.post('/feedback/transcribe', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+})
 export const listFeedback = (params) => api.get('/feedback/list', { params })
 export const getProjects = () => api.get('/feedback/projects')
 

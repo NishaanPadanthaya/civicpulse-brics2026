@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { FiMic, FiMicOff, FiSend, FiCheckCircle, FiZap } from 'react-icons/fi'
 import toast from 'react-hot-toast'
-import { submitFeedback, analyzeText } from '../api'
+import { submitFeedback, analyzeText, transcribeAudio } from '../api'
 
 const COUNTRIES = [
   { value: 'India',        label: 'India',        cities: ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Hyderabad', 'Kolkata', 'Jaipur', 'Pune'] },
@@ -56,6 +56,9 @@ export default function CitizenPortal() {
   const analyzeTimer = useRef(null)
   const mediaRecorder = useRef(null)
   const audioChunks = useRef([])
+  const [isTranscribing, setIsTranscribing] = useState(false)
+  const textRef = useRef('')
+  textRef.current = text
 
   const selectedCountry = COUNTRIES.find(c => c.value === country)
 
@@ -79,10 +82,28 @@ export default function CitizenPortal() {
       audioChunks.current = []
       const mr = new MediaRecorder(stream)
       mediaRecorder.current = mr
-      mr.ondataavailable = e => audioChunks.current.push(e.data)
+      mr.ondataavailable = e => { if (e.data.size > 0) audioChunks.current.push(e.data) }
       mr.onstop = async () => {
         stream.getTracks().forEach(t => t.stop())
-        toast.success('Voice recorded. Edit text if needed then submit.')
+        const mimeType = mr.mimeType || 'audio/webm'
+        const blob = new Blob(audioChunks.current, { type: mimeType })
+        if (!blob.size) { toast.error('No audio captured. Please try again.'); return }
+        const ext = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mp4') ? 'mp4' : 'webm'
+        const formData = new FormData()
+        formData.append('audio', blob, `recording.${ext}`)
+        setIsTranscribing(true)
+        try {
+          const res = await transcribeAudio(formData)
+          const transcript = res.data.text?.trim()
+          if (!transcript) { toast.error('Could not detect any speech.'); return }
+          const current = textRef.current.trim()
+          handleTextChange(current ? `${current} ${transcript}` : transcript)
+          toast.success('Voice transcribed. Edit text if needed then submit.')
+        } catch {
+          toast.error('Voice transcription failed. Please try again.')
+        } finally {
+          setIsTranscribing(false)
+        }
       }
       mr.start()
       setIsRecording(true)
@@ -179,8 +200,8 @@ export default function CitizenPortal() {
               style={{ background: 'transparent', color: 'var(--text-1)', fontFamily: 'inherit' }}
             />
             <div className="flex items-center gap-2 px-4 py-2.5" style={{ borderTop: '1px solid var(--border)' }}>
-              <button type="button" onClick={handleRecord}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+              <button type="button" onClick={handleRecord} disabled={isTranscribing}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{
                   background: isRecording ? '#dc2626' : 'var(--bg-2)',
                   color: isRecording ? '#fff' : 'var(--text-2)',
@@ -188,6 +209,12 @@ export default function CitizenPortal() {
                 }}>
                 {isRecording ? <><FiMicOff size={12} /> Stop</> : <><FiMic size={12} /> Voice input</>}
               </button>
+              {isTranscribing && (
+                <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-3)' }}>
+                  <span className="w-3 h-3 rounded-full border border-current border-t-transparent animate-spin inline-block" />
+                  Transcribing...
+                </span>
+              )}
               {isAnalyzing && (
                 <span className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-3)' }}>
                   <span className="w-3 h-3 rounded-full border border-current border-t-transparent animate-spin inline-block" />

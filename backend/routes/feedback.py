@@ -73,6 +73,19 @@ async def submit_feedback(payload: FeedbackSubmit):
     }
 
 
+@router.post("/transcribe")
+async def transcribe_audio(audio: UploadFile = File(...)):
+    """Transcribe audio with Groq Whisper without saving any feedback"""
+    audio_bytes = await audio.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Empty audio file")
+    try:
+        text = await transcribe_voice(audio_bytes, audio.filename or "audio.webm")
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Voice transcription failed: {str(e)}")
+    return {"success": True, "text": (text or "").strip()}
+
+
 @router.post("/voice")
 async def submit_voice_feedback(
     audio: UploadFile = File(...),
