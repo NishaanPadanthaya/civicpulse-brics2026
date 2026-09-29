@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { FiCheckCircle, FiClock, FiActivity, FiAlertTriangle } from 'react-icons/fi'
 import { listFeedback } from '../api'
+import Breadcrumbs from '../components/Breadcrumbs'
 
 const STATUS = {
   pending:     { label: 'Pending',     color: 'var(--text-3)', icon: FiClock },
@@ -10,8 +11,11 @@ const STATUS = {
 }
 
 function UrgencyBadge({ score }) {
-  const cls = score >= 9 ? 'badge-critical' : score >= 7 ? 'badge-high' : score >= 4 ? 'badge-medium' : 'badge-low'
-  return <span className={`badge ${cls}`}>{score}/10</span>
+  const { cls, label, icon } = score >= 9 ? { cls: 'badge-critical', label: 'Critical', icon: '🔴' }
+    : score >= 7 ? { cls: 'badge-high', label: 'High', icon: '🟠' }
+    : score >= 4 ? { cls: 'badge-medium', label: 'Medium', icon: '🟡' }
+    : { cls: 'badge-low', label: 'Low', icon: '🟢' }
+  return <span className={`badge ${cls}`}>{icon} {label}</span>
 }
 
 export default function ProjectTracker() {
@@ -35,6 +39,11 @@ export default function ProjectTracker() {
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-6xl mx-auto">
+
+        <Breadcrumbs items={[
+          { label: 'Home', path: '/' },
+          { label: 'Implementation Tracker' }
+        ]} />
 
         <div className="mb-6">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text-1)' }}>Project Tracker</h1>
@@ -87,7 +96,7 @@ export default function ProjectTracker() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                      {['Feedback','Category','Location','Urgency','Source','Status','Date'].map(h => (
+                      {['Feedback','Issue Type','Location','Priority Level','Source','Status','Date'].map(h => (
                         <th key={h} className="text-left py-3 px-4 text-xs font-medium" style={{ color: 'var(--text-3)' }}>{h}</th>
                       ))}
                     </tr>

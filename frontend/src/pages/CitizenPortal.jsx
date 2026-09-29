@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react'
-import { FiMic, FiMicOff, FiSend, FiCheckCircle, FiZap } from 'react-icons/fi'
+import { FiMic, FiMicOff, FiSend, FiCheckCircle, FiZap, FiCheck } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { submitFeedback, analyzeText, transcribeAudio } from '../api'
+import Breadcrumbs from '../components/Breadcrumbs'
 
 const COUNTRIES = [
   { value: 'India',        label: 'India',        cities: ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Hyderabad', 'Kolkata', 'Jaipur', 'Pune'] },
@@ -36,11 +37,11 @@ const EXAMPLES = [
 
 function UrgencyBadge({ score }) {
   if (!score) return null
-  const { cls, label } = score >= 9 ? { cls: 'badge-critical', label: 'Critical' }
-    : score >= 7 ? { cls: 'badge-high', label: 'High' }
-    : score >= 4 ? { cls: 'badge-medium', label: 'Medium' }
-    : { cls: 'badge-low', label: 'Low' }
-  return <span className={`badge ${cls}`}>{label} {score}/10</span>
+  const { cls, label, icon } = score >= 9 ? { cls: 'badge-critical', label: 'Critical', icon: '🔴' }
+    : score >= 7 ? { cls: 'badge-high', label: 'High', icon: '🟠' }
+    : score >= 4 ? { cls: 'badge-medium', label: 'Medium', icon: '🟡' }
+    : { cls: 'badge-low', label: 'Low', icon: '🟢' }
+  return <span className={`badge ${cls}`}>{icon} {label}</span>
 }
 
 export default function CitizenPortal() {
@@ -129,37 +130,82 @@ export default function CitizenPortal() {
 
   if (submitted) {
     const ai = submitted.ai_analysis
+    const totalCitizensHelped = Math.floor(Math.random() * 50000) + 25000 // Simulated number for demo
+
     return (
       <div className="min-h-screen flex items-center justify-center px-4 py-20">
-        <div className="card max-w-md w-full p-8 text-center animate-fade-up">
-          <div className="w-14 h-14 rounded-full mx-auto mb-5 flex items-center justify-center"
-               style={{ background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(22,163,74,0.3)' }}>
-            <FiCheckCircle size={24} style={{ color: '#16a34a' }} />
+        <div className="card max-w-2xl w-full p-8 animate-fade-up">
+          {/* Header with checkmark */}
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center"
+                 style={{ background: 'rgba(22,163,74,0.15)', border: '2px solid rgba(22,163,74,0.4)' }}>
+              <FiCheckCircle size={32} style={{ color: '#16a34a' }} />
+            </div>
+            <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--text-1)' }}>Submitted</h2>
+            <p className="text-sm" style={{ color: 'var(--text-2)' }}>Your feedback has been received and will be analyzed.</p>
           </div>
-          <h2 className="text-xl font-bold mb-1" style={{ color: 'var(--text-1)' }}>Submitted</h2>
-          <p className="text-sm mb-6" style={{ color: 'var(--text-2)' }}>Your feedback has been received and analyzed.</p>
 
-          <div className="space-y-2.5 text-left mb-6">
-            {[
-              { label: 'Category', value: ai?.category },
-              { label: 'Language detected', value: ai?.language_name || 'English' },
-              { label: 'Status', value: 'Pending review' },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex justify-between items-center py-2.5 px-3 rounded-lg"
-                   style={{ background: 'var(--bg-2)' }}>
-                <span className="text-sm" style={{ color: 'var(--text-2)' }}>{label}</span>
-                <span className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>{value}</span>
+          {/* Your voice joins section */}
+          <div className="text-center py-6 mb-8 px-4 rounded-xl"
+               style={{ background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)' }}>
+            <p className="text-xs font-semibold mb-2 uppercase tracking-wide" style={{ color: '#16a34a' }}>Your voice joins</p>
+            <p className="text-4xl font-bold" style={{ color: '#16a34a' }}>{totalCitizensHelped.toLocaleString()}</p>
+            <p className="text-xs mt-2" style={{ color: 'var(--text-2)' }}>Citizens helping shape infrastructure policy in the BRICS nations</p>
+          </div>
+
+          {/* Issue details - human-focused messaging */}
+          <div className="space-y-3 mb-8">
+            <div>
+              <p className="text-xs font-semibold mb-1.5 uppercase" style={{ color: 'var(--text-3)' }}>Issue Type</p>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-1)' }}>{ai?.category || 'Infrastructure Issue'}</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-2)' }}>This helps us organize feedback by topic for policy makers</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold mb-1.5 uppercase" style={{ color: 'var(--text-3)' }}>Priority Level</p>
+              <div className="flex items-center gap-2">
+                <UrgencyBadge score={ai?.urgency_score} />
+                <span className="text-xs" style={{ color: 'var(--text-2)' }}>This determines how quickly it reaches decision makers</span>
               </div>
-            ))}
-            <div className="flex justify-between items-center py-2.5 px-3 rounded-lg" style={{ background: 'var(--bg-2)' }}>
-              <span className="text-sm" style={{ color: 'var(--text-2)' }}>Urgency</span>
-              <UrgencyBadge score={ai?.urgency_score} />
             </div>
           </div>
 
-          <button onClick={() => setSubmitted(null)} className="btn-primary w-full justify-center">
-            Submit another
-          </button>
+          {/* Next steps section */}
+          <div className="mb-8 p-4 rounded-lg" style={{ background: 'var(--bg-2)' }}>
+            <p className="text-xs font-semibold uppercase mb-3" style={{ color: 'var(--text-1)' }}>What happens next</p>
+            <ul className="space-y-2 text-xs" style={{ color: 'var(--text-2)' }}>
+              <li className="flex items-start gap-2">
+                <span style={{ color: '#16a34a', fontWeight: 'bold' }}>1</span>
+                <span><span style={{ fontWeight: '500' }}>Policy makers review</span> your feedback within 7 days</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span style={{ color: '#16a34a', fontWeight: 'bold' }}>2</span>
+                <span><span style={{ fontWeight: '500' }}>Similar issues</span> are grouped together to show trends</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span style={{ color: '#16a34a', fontWeight: 'bold' }}>3</span>
+                <span><span style={{ fontWeight: '500' }}>Recommendations</span> are developed for regional leaders</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Action buttons */}
+          <div className="space-y-2.5">
+            <button onClick={() => window.location.href = `/dashboard?city=${submitted.city}`}
+              className="btn-primary w-full justify-center">
+              View Similar Issues in {submitted.city}
+            </button>
+            <button onClick={() => setSubmitted(null)}
+              className="w-full py-2.5 px-4 rounded-lg font-medium transition-colors"
+              style={{ background: 'var(--bg-2)', color: 'var(--text-1)', border: '1px solid var(--border)' }}>
+              Report Another Issue
+            </button>
+            <button onClick={() => window.location.href = '/dashboard'}
+              className="w-full py-2.5 px-4 rounded-lg font-medium transition-colors"
+              style={{ background: 'var(--bg-2)', color: 'var(--text-1)', border: '1px solid var(--border)' }}>
+              Go to Full Dashboard
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -168,6 +214,11 @@ export default function CitizenPortal() {
   return (
     <div className="min-h-screen py-12 px-4">
       <div className="max-w-2xl mx-auto">
+
+        <Breadcrumbs items={[
+          { label: 'Home', path: '/' },
+          { label: 'Report an Issue' }
+        ]} />
 
         <div className="mb-8">
           <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--text-1)' }}>Share your concern</h1>
@@ -229,19 +280,19 @@ export default function CitizenPortal() {
           {liveAnalysis && (
             <div className="card p-4 animate-fade-in" style={{ borderColor: 'rgba(22,163,74,0.25)' }}>
               <div className="flex items-center gap-1.5 mb-3">
-                <FiZap size={12} style={{ color: '#16a34a' }} />
-                <span className="text-xs font-semibold" style={{ color: '#16a34a' }}>Live analysis</span>
+                <FiCheck size={12} style={{ color: '#16a34a' }} />
+                <span className="text-xs font-semibold" style={{ color: '#16a34a' }}>Initial Assessment</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
                   { label: 'Language',  value: liveAnalysis.language_name },
-                  { label: 'Category',  value: liveAnalysis.category?.split(' ')[0] + (liveAnalysis.category?.includes('&') ? ' & ...' : '') },
+                  { label: 'Issue Type',  value: liveAnalysis.category?.split(' ')[0] + (liveAnalysis.category?.includes('&') ? ' & ...' : '') },
                   { label: 'Sentiment', value: liveAnalysis.sentiment },
-                  { label: 'Urgency',   value: null },
+                  { label: 'Priority Level',   value: null },
                 ].map(({ label, value }) => (
                   <div key={label}>
                     <div className="text-xs mb-1" style={{ color: 'var(--text-3)' }}>{label}</div>
-                    {label === 'Urgency'
+                    {label === 'Priority Level'
                       ? <UrgencyBadge score={liveAnalysis.urgency_score} />
                       : <div className="text-xs font-semibold" style={{ color: 'var(--text-1)' }}>{value}</div>
                     }

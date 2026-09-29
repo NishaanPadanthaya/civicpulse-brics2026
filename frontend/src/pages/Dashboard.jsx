@@ -1,11 +1,12 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
-import { FiUsers, FiAlertTriangle, FiCheckCircle, FiTrendingUp, FiRefreshCw } from 'react-icons/fi'
+import { FiUsers, FiAlertTriangle, FiCheckCircle, FiTrendingUp, FiRefreshCw, FiSearch, FiMapPin, FiFilter, FiZap, FiCheckSquare } from 'react-icons/fi'
 import { getDashboardStats, getHotspots, getCategoryBreakdown, getCountryComparison } from '../api'
 import { CategoryBarChart, UrgencyPieChart, CountryRadarChart } from '../components/charts/CategoryChart'
 import AIRecommendations from '../components/AIRecommendations'
 import NationalDataView from '../components/NationalDataView'
 import SdgAlignmentView from '../components/SdgAlignmentView'
 import MapErrorBoundary from '../components/MapErrorBoundary'
+import Breadcrumbs from '../components/Breadcrumbs'
 
 // Lazy-load the map so a Leaflet crash never breaks the whole Dashboard
 const HeatMap = lazy(() => import('../components/map/HeatMap'))
@@ -47,6 +48,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('overview')
   const [filterCountry, setFilterCountry] = useState('')
   const [minUrgency, setMinUrgency] = useState(1)
+  const [activeQuickFilter, setActiveQuickFilter] = useState(null)
   // Mount HeatMap only after the map tab is first visited — avoids Leaflet
   // initialising inside a display:none container (zero dimensions → crash).
   // Once mounted it stays alive so Leaflet never re-initialises on tab switch.
@@ -80,23 +82,47 @@ export default function Dashboard() {
 
   const tabs = [
     { id: 'overview',  label: 'Overview' },
-    { id: 'map',       label: 'Heatmap' },
-    { id: 'national',  label: 'National Baselines' },
-    { id: 'sdg',       label: 'SDG & Priority Matrix' },
+    { id: 'map',       label: 'Location Map' },
+    { id: 'national',  label: 'Regional Issues' },
+    { id: 'sdg',       label: 'Priorities & Impact' },
     { id: 'analytics', label: 'Cross-Nation Analytics' },
-    { id: 'ai',        label: 'AI Policy Recommendations' },
+    { id: 'ai',        label: 'Policy Recommendations' },
   ]
+
+  const quickFilters = [
+    { id: 'all',       label: 'Browse All Issues',  icon: FiSearch },
+    { id: 'location',  label: 'By Location',        icon: FiMapPin },
+    { id: 'category',  label: 'By Issue Type',      icon: FiFilter },
+    { id: 'urgent',    label: 'High Priority Only', icon: FiZap },
+    { id: 'resolved',  label: 'Resolved Issues',    icon: FiCheckSquare },
+  ]
+
+  const handleQuickFilter = (filterId) => {
+    setActiveQuickFilter(filterId)
+    // Apply corresponding filter logic
+    if (filterId === 'urgent') {
+      setMinUrgency(7)
+    } else if (filterId === 'all') {
+      setMinUrgency(1)
+    }
+    // Additional filter logic can be added here
+  }
 
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-6xl mx-auto">
 
+        <Breadcrumbs items={[
+          { label: 'Home', path: '/' },
+          { label: 'Community Insights' }
+        ]} />
+
         {/* ── Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--text-1)' }}>Policy Dashboard</h1>
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--text-1)' }}>Community Insights</h1>
             <p className="text-sm mt-0.5" style={{ color: 'var(--text-2)' }}>
-              Real-time BRICS infrastructure demand intelligence
+              See what citizens are saying about local infrastructure
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -118,16 +144,12 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ── Live dot ── */}
-        <div className="flex items-center gap-2 mb-6 text-xs" style={{ color: 'var(--text-3)' }}>
-          <span className="live-dot" /> Live — updates as citizens submit
-        </div>
 
         {/* ── Stat cards ── */}
         {stats && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatCard icon={FiUsers}         label="Total submissions" value={stats.total_feedback?.toLocaleString()} sub="All BRICS nations" />
-            <StatCard icon={FiAlertTriangle}  label="Critical issues"   value={stats.critical_issues?.toLocaleString()} sub="Urgency 8 or above" />
+            <StatCard icon={FiAlertTriangle}  label="High Priority Issues"   value={stats.critical_issues?.toLocaleString()} sub="Priority Level 7+" />
             <StatCard icon={FiCheckCircle}   label="Implemented"       value={stats.implemented?.toLocaleString()} sub="Projects completed" />
             <StatCard icon={FiTrendingUp}    label="Satisfaction"      value={`${stats.satisfaction_rate}%`} sub="Positive feedback" />
           </div>
@@ -152,11 +174,11 @@ export default function Dashboard() {
         {activeTab === 'overview' && (
           <div className="grid lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2 card p-5">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Issues by category</h3>
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Issues by Issue Type</h3>
               <CategoryBarChart data={categories} />
             </div>
             <div className="card p-5">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Urgency distribution</h3>
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Priority Level Distribution</h3>
               {stats && (
                 <>
                   <UrgencyPieChart data={stats.urgency_distribution} />
@@ -202,7 +224,7 @@ export default function Dashboard() {
             )}
             <div className="card p-4">
               <div className="flex flex-wrap gap-4 text-xs" style={{ color: 'var(--text-2)' }}>
-                <span className="font-medium">Pin urgency:</span>
+                <span className="font-medium">Pin Priority Level:</span>
                 {[
                   { label: 'Critical (9-10)', color: '#dc2626' },
                   { label: 'High (7-8)',      color: '#d97706' },
