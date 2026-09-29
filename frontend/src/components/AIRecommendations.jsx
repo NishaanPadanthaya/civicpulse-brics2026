@@ -54,7 +54,7 @@ export default function AIRecommendations({ filterCountry = '' }) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold" style={{ color: 'var(--text-1)' }}>
-            AI Policy Recommendations {filterCountry ? `— ${filterCountry}` : '(BRICS Cross-National)'}
+            Policy Recommendations {filterCountry ? `— ${filterCountry}` : '(BRICS Cross-National)'}
           </h2>
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-3)' }}>
             Synthesizes citizen feedback with national demographic data, infrastructure indices & flagship investment plans
@@ -70,7 +70,7 @@ export default function AIRecommendations({ filterCountry = '' }) {
           <div className="w-8 h-8 rounded-full border border-current border-t-transparent animate-spin mx-auto mb-3"
                style={{ color: 'var(--text-3)' }} />
           <p className="text-sm font-medium" style={{ color: 'var(--text-2)' }}>
-            AI Policy Engine synthesizing citizen demand against national indices and public CapEx...
+            Policy Recommendations engine synthesizing citizen demand against national indices and public CapEx...
           </p>
         </div>
       )}

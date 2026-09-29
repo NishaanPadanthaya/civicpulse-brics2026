@@ -69,13 +69,6 @@ export default function Navbar() {
               <FiLogOut size={15} />
             </button>
 
-            {/* Status badge */}
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                 style={{ background: 'var(--bg-hover)', color: 'var(--text-2)', border: '1px solid var(--border)' }}>
-              <span className="live-dot" />
-              Live
-            </div>
-
             {/* Mobile toggle */}
             <button className="md:hidden w-8 h-8 rounded-lg flex items-center justify-center"
                     style={{ color: 'var(--text-2)', background: 'var(--bg-hover)' }}

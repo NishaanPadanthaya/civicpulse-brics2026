@@ -91,9 +91,9 @@ function HeroVisual({ stats }) {
         {/* Header bar */}
         <div className="card p-3.5 mb-3 animate-fade-up" style={{ animationDelay: '0.1s' }}>
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold" style={{ color: 'var(--text-2)' }}>Infrastructure Demand — Live</span>
+            <span className="text-xs font-semibold" style={{ color: 'var(--text-2)' }}>Infrastructure Priorities</span>
             <span className="flex items-center gap-1.5 text-xs" style={{ color: '#16a34a' }}>
-              <span className="live-dot" /> Active
+              Active
             </span>
           </div>
           {/* Mini bar chart */}
@@ -103,7 +103,6 @@ function HeroVisual({ stats }) {
                    style={{
                      height: `${h}%`,
                      background: i === 7 ? 'var(--text-1)' : 'var(--border-strong)',
-                     animation: `fadeUp 0.5s ease ${i * 0.06}s both`,
                    }} />
             ))}
           </div>
@@ -112,14 +111,13 @@ function HeroVisual({ stats }) {
         {/* Stats row */}
         <div className="grid grid-cols-2 gap-3 mb-3 animate-fade-up" style={{ animationDelay: '0.2s' }}>
           <StatCard label="Submissions" value={stats?.total_feedback?.toLocaleString() ?? '—'} sub="across 5 nations" />
-          <StatCard label="Critical Issues" value={stats?.critical_issues?.toLocaleString() ?? '—'} sub="urgency 8+" />
+          <StatCard label="High Priority Issues" value={stats?.critical_issues?.toLocaleString() ?? '—'} sub="Priority Level 7+" />
         </div>
 
         {/* Live feed */}
         <div className="card p-3 animate-fade-up" style={{ animationDelay: '0.3s' }}>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-semibold" style={{ color: 'var(--text-2)' }}>Live Submissions</span>
-            <span className="live-dot ml-auto" />
+            <span className="text-xs font-semibold" style={{ color: 'var(--text-2)' }}>Assessment</span>
           </div>
           <AnimatedFeed />
           <div className="mt-1 space-y-1">
@@ -203,7 +201,7 @@ export default function Home() {
               <div className="flex flex-wrap gap-6">
                 {[
                   { label: 'Citizen submissions', value: stats.total_feedback?.toLocaleString() },
-                  { label: 'Critical issues', value: stats.critical_issues?.toLocaleString() },
+                  { label: 'High Priority Issues', value: stats.critical_issues?.toLocaleString() },
                   { label: 'Implemented', value: stats.implemented?.toLocaleString() },
                   { label: 'Nations covered', value: '5' },
                 ].map(({ label, value }) => (
