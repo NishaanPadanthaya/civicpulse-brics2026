@@ -99,12 +99,21 @@ export default function Dashboard() {
   const handleQuickFilter = (filterId) => {
     setActiveQuickFilter(filterId)
     // Apply corresponding filter logic
-    if (filterId === 'urgent') {
+    if (filterId === 'all') {
+      setMinUrgency(1)
+      setFilterCountry('')
+    } else if (filterId === 'urgent') {
       setMinUrgency(7)
-    } else if (filterId === 'all') {
+    } else if (filterId === 'location') {
+      // Scroll to map tab to show locations
+      setActiveTab('map')
+    } else if (filterId === 'category') {
+      // Show category breakdown
+      setActiveTab('overview')
+    } else if (filterId === 'resolved') {
+      // Would need API support for resolved filter
       setMinUrgency(1)
     }
-    // Additional filter logic can be added here
   }
 
   return (
