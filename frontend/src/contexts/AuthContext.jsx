@@ -9,7 +9,8 @@ const CREDENTIALS = {
 
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    return sessionStorage.getItem('civicpulse-auth') === 'true'
+    // Always authenticate with default user
+    return true
   })
 
   const login = (email, password) => {

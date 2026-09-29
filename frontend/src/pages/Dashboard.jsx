@@ -6,7 +6,6 @@ import AIRecommendations from '../components/AIRecommendations'
 import NationalDataView from '../components/NationalDataView'
 import SdgAlignmentView from '../components/SdgAlignmentView'
 import MapErrorBoundary from '../components/MapErrorBoundary'
-import Breadcrumbs from '../components/Breadcrumbs'
 
 // Lazy-load the map so a Leaflet crash never breaks the whole Dashboard
 const HeatMap = lazy(() => import('../components/map/HeatMap'))
@@ -112,11 +111,6 @@ export default function Dashboard() {
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-6xl mx-auto">
 
-        <Breadcrumbs items={[
-          { label: 'Home', path: '/' },
-          { label: 'Community Insights' }
-        ]} />
-
         {/* ── Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
@@ -155,143 +149,175 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── Tab bar ── */}
-        <div className="flex gap-1 mb-6 overflow-x-auto pb-1"
-             style={{ borderBottom: '1px solid var(--border)' }}>
-          {tabs.map(t => (
-            <button key={t.id} onClick={() => setActiveTab(t.id)}
-              className="flex-shrink-0 px-4 py-2 text-sm font-medium transition-colors"
-              style={{
-                color: activeTab === t.id ? 'var(--text-1)' : 'var(--text-3)',
-                borderBottom: activeTab === t.id ? '2px solid var(--text-1)' : '2px solid transparent',
-              }}>
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {/* ── Overview ── */}
-        {activeTab === 'overview' && (
-          <div className="grid lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 card p-5">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Issues by Issue Type</h3>
-              <CategoryBarChart data={categories} />
-            </div>
-            <div className="card p-5">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Priority Level Distribution</h3>
-              {stats && (
-                <>
-                  <UrgencyPieChart data={stats.urgency_distribution} />
-                  <div className="mt-4 space-y-2">
-                    {[
-                      { label: 'Critical', count: stats.urgency_distribution?.critical || 0, color: '#dc2626' },
-                      { label: 'High',     count: stats.urgency_distribution?.high     || 0, color: '#d97706' },
-                      { label: 'Medium',   count: stats.urgency_distribution?.medium   || 0, color: '#2563eb' },
-                      { label: 'Low',      count: stats.urgency_distribution?.low      || 0, color: '#16a34a' },
-                    ].map(({ label, count, color }) => {
-                      const pct = stats.total_feedback > 0 ? (count / stats.total_feedback * 100) : 0
-                      return (
-                        <div key={label} className="flex items-center gap-2">
-                          <span className="text-xs w-14" style={{ color: 'var(--text-3)' }}>{label}</span>
-                          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-2)' }}>
-                            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color, transition: 'width 0.8s ease' }} />
-                          </div>
-                          <span className="text-xs w-6 text-right" style={{ color: 'var(--text-3)' }}>{count}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ── Heatmap — mounted on first visit, hidden via CSS afterwards ──
-             Never mount while display:none — Leaflet needs real dimensions. */}
-        <div style={{ display: activeTab === 'map' ? 'block' : 'none' }}>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-3)' }}>
-              <span>Click any pin to see what was reported</span>
-              <span>{hotspots.length} points shown</span>
-            </div>
-            {mapEverVisited && (
-              <MapErrorBoundary>
-                <Suspense fallback={<MapFallback />}>
-                  <HeatMap points={hotspots} showClusters height="560px" />
-                </Suspense>
-              </MapErrorBoundary>
-            )}
-            <div className="card p-4">
-              <div className="flex flex-wrap gap-4 text-xs" style={{ color: 'var(--text-2)' }}>
-                <span className="font-medium">Pin Priority Level:</span>
-                {[
-                  { label: 'Critical (9-10)', color: '#dc2626' },
-                  { label: 'High (7-8)',      color: '#d97706' },
-                  { label: 'Medium (4-6)',    color: '#2563eb' },
-                  { label: 'Low (1-3)',       color: '#16a34a' },
-                ].map(({ label, color }) => (
-                  <span key={label} className="flex items-center gap-1.5">
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block' }} />
-                    {label}
-                  </span>
-                ))}
+        {/* ── Main layout with sidebar ── */}
+        <div className="grid lg:grid-cols-4 gap-6">
+          {/* ── Quick Filters Sidebar (hidden on mobile) ── */}
+          <div className="hidden lg:block">
+            <div className="card p-4 sticky top-24">
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-1)' }}>QUICK FILTERS</h3>
+              <div className="space-y-2">
+                {quickFilters.map(filter => {
+                  const Icon = filter.icon
+                  return (
+                    <button
+                      key={filter.id}
+                      onClick={() => handleQuickFilter(filter.id)}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors text-left"
+                      style={{
+                        background: activeQuickFilter === filter.id ? 'var(--bg-2)' : 'transparent',
+                        color: activeQuickFilter === filter.id ? 'var(--text-1)' : 'var(--text-2)',
+                      }}
+                    >
+                      <Icon size={16} />
+                      <span>{filter.label}</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>
-        </div>
 
-        {/* ── National Baselines ── */}
-        {activeTab === 'national' && (
-          <NationalDataView defaultCountry={filterCountry} />
-        )}
-
-        {/* ── SDG & Priority Matrix ── */}
-        {activeTab === 'sdg' && (
-          <SdgAlignmentView filterCountry={filterCountry} />
-        )}
-
-        {/* ── Analytics ── */}
-        {activeTab === 'analytics' && (
-          <div className="space-y-4">
-            <div className="card p-5">
-              <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--text-1)' }}>Cross-nation demand radar</h3>
-              <p className="text-xs mb-4" style={{ color: 'var(--text-3)' }}>Infrastructure demand intensity across BRICS nations</p>
-              <CountryRadarChart data={countries} />
+          {/* ── Main content area ── */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* ── Tab bar ── */}
+            <div className="flex gap-1 overflow-x-auto pb-1"
+                 style={{ borderBottom: '1px solid var(--border)' }}>
+              {tabs.map(t => (
+                <button key={t.id} onClick={() => setActiveTab(t.id)}
+                  className="flex-shrink-0 px-4 py-2 text-sm font-medium transition-colors"
+                  style={{
+                    color: activeTab === t.id ? 'var(--text-1)' : 'var(--text-3)',
+                    borderBottom: activeTab === t.id ? '2px solid var(--text-1)' : '2px solid transparent',
+                  }}>
+                  {t.label}
+                </button>
+              ))}
             </div>
-            <div className="card p-5 overflow-x-auto">
-              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Country breakdown</h3>
-              <table className="w-full text-sm min-w-[500px]">
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                    {['Nation', 'Submissions', 'Top Category', 'Avg Urgency'].map(h => (
-                      <th key={h} className="text-left pb-2.5 pr-6 text-xs font-medium" style={{ color: 'var(--text-3)' }}>{h}</th>
+
+            {/* ── Overview ── */}
+            {activeTab === 'overview' && (
+              <div className="grid lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-2 card p-5">
+                  <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Issues by Issue Type</h3>
+                  <CategoryBarChart data={categories} />
+                </div>
+                <div className="card p-5">
+                  <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Priority Level Distribution</h3>
+                  {stats && (
+                    <>
+                      <UrgencyPieChart data={stats.urgency_distribution} />
+                      <div className="mt-4 space-y-2">
+                        {[
+                          { label: 'Critical', count: stats.urgency_distribution?.critical || 0, color: '#dc2626' },
+                          { label: 'High',     count: stats.urgency_distribution?.high     || 0, color: '#d97706' },
+                          { label: 'Medium',   count: stats.urgency_distribution?.medium   || 0, color: '#2563eb' },
+                          { label: 'Low',      count: stats.urgency_distribution?.low      || 0, color: '#16a34a' },
+                        ].map(({ label, count, color }) => {
+                          const pct = stats.total_feedback > 0 ? (count / stats.total_feedback * 100) : 0
+                          return (
+                            <div key={label} className="flex items-center gap-2">
+                              <span className="text-xs w-14" style={{ color: 'var(--text-3)' }}>{label}</span>
+                              <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-2)' }}>
+                                <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color, transition: 'width 0.8s ease' }} />
+                              </div>
+                              <span className="text-xs w-6 text-right" style={{ color: 'var(--text-3)' }}>{count}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ── Heatmap — mounted on first visit, hidden via CSS afterwards ──
+                 Never mount while display:none — Leaflet needs real dimensions. */}
+            <div style={{ display: activeTab === 'map' ? 'block' : 'none' }}>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-3)' }}>
+                  <span>Click any pin to see what was reported</span>
+                  <span>{hotspots.length} points shown</span>
+                </div>
+                {mapEverVisited && (
+                  <MapErrorBoundary>
+                    <Suspense fallback={<MapFallback />}>
+                      <HeatMap points={hotspots} showClusters height="560px" />
+                    </Suspense>
+                  </MapErrorBoundary>
+                )}
+                <div className="card p-4">
+                  <div className="flex flex-wrap gap-4 text-xs" style={{ color: 'var(--text-2)' }}>
+                    <span className="font-medium">Pin Priority Level:</span>
+                    {[
+                      { label: 'Critical (9-10)', color: '#dc2626' },
+                      { label: 'High (7-8)',      color: '#d97706' },
+                      { label: 'Medium (4-6)',    color: '#2563eb' },
+                      { label: 'Low (1-3)',       color: '#16a34a' },
+                    ].map(({ label, color }) => (
+                      <span key={label} className="flex items-center gap-1.5">
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block' }} />
+                        {label}
+                      </span>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(countries).map(([country, data]) => {
-                    const topCat = Object.entries(data.categories || {})
-                      .sort((a, b) => b[1].count - a[1].count)[0]
-                    return (
-                      <tr key={country} style={{ borderBottom: '1px solid var(--border)' }}>
-                        <td className="py-3 pr-6 font-medium" style={{ color: 'var(--text-1)' }}>{country}</td>
-                        <td className="py-3 pr-6" style={{ color: 'var(--text-2)' }}>{data.total}</td>
-                        <td className="py-3 pr-6 text-xs" style={{ color: 'var(--text-2)' }}>{topCat?.[0] || '—'}</td>
-                        <td className="py-3" style={{ color: topCat?.[1]?.avg_urgency >= 7 ? '#d97706' : '#16a34a' }}>
-                          {topCat?.[1]?.avg_urgency || '—'}/10
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
 
-        {/* ── AI Insights ── */}
-        {activeTab === 'ai' && <AIRecommendations filterCountry={filterCountry} />}
+            {/* ── National Baselines ── */}
+            {activeTab === 'national' && (
+              <NationalDataView defaultCountry={filterCountry} />
+            )}
+
+            {/* ── SDG & Priority Matrix ── */}
+            {activeTab === 'sdg' && (
+              <SdgAlignmentView filterCountry={filterCountry} />
+            )}
+
+            {/* ── Analytics ── */}
+            {activeTab === 'analytics' && (
+              <div className="space-y-4">
+                <div className="card p-5">
+                  <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--text-1)' }}>Cross-nation demand radar</h3>
+                  <p className="text-xs mb-4" style={{ color: 'var(--text-3)' }}>Infrastructure demand intensity across BRICS nations</p>
+                  <CountryRadarChart data={countries} />
+                </div>
+                <div className="card p-5 overflow-x-auto">
+                  <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-1)' }}>Country breakdown</h3>
+                  <table className="w-full text-sm min-w-[500px]">
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                        {['Nation', 'Submissions', 'Top Category', 'Avg Urgency'].map(h => (
+                          <th key={h} className="text-left pb-2.5 pr-6 text-xs font-medium" style={{ color: 'var(--text-3)' }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(countries).map(([country, data]) => {
+                        const topCat = Object.entries(data.categories || {})
+                          .sort((a, b) => b[1].count - a[1].count)[0]
+                        return (
+                          <tr key={country} style={{ borderBottom: '1px solid var(--border)' }}>
+                            <td className="py-3 pr-6 font-medium" style={{ color: 'var(--text-1)' }}>{country}</td>
+                            <td className="py-3 pr-6" style={{ color: 'var(--text-2)' }}>{data.total}</td>
+                            <td className="py-3 pr-6 text-xs" style={{ color: 'var(--text-2)' }}>{topCat?.[0] || '—'}</td>
+                            <td className="py-3" style={{ color: topCat?.[1]?.avg_urgency >= 7 ? '#d97706' : '#16a34a' }}>
+                              {topCat?.[1]?.avg_urgency || '—'}/10
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* ── AI Insights ── */}
+            {activeTab === 'ai' && <AIRecommendations filterCountry={filterCountry} />}
+          </div>
+        </div>
 
       </div>
     </div>

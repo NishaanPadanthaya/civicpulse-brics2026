@@ -7,15 +7,9 @@ import Home from './pages/Home'
 import CitizenPortal from './pages/CitizenPortal'
 import Dashboard from './pages/Dashboard'
 import ProjectTracker from './pages/ProjectTracker'
-import Login from './pages/Login'
+import IssueDetail from './pages/IssueDetail'
 
 function AppContent() {
-  const { isAuthenticated } = useAuth()
-
-  if (!isAuthenticated) {
-    return <Login />
-  }
-
   return (
     <div className="min-h-screen bg-page">
       <Navbar />
@@ -24,6 +18,7 @@ function AppContent() {
         <Route path="/submit" element={<CitizenPortal />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/projects" element={<ProjectTracker />} />
+        <Route path="/issue-detail" element={<IssueDetail />} />
       </Routes>
     </div>
   )
